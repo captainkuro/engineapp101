@@ -42,6 +42,12 @@ class Helper:
 		user_id = cookie.split("|")[0]
 		return User.get_by_id(int(user_id))
 
+	@staticmethod
+	def add_cookie(headers, user):
+		user_id = user.key().id()
+		cookie = Helper.hash_cookie(str(user_id))
+		headers.add_header('Set-Cookie', "user_id=%s; Path=/" % cookie)
+
 class SignupPage(Handler):
 	def get(self):
 		self.render_page()
@@ -73,10 +79,8 @@ class SignupPage(Handler):
 			hashpass = Helper.hash_password(username, password, salt)
 			user = User(username=username, hashpass=hashpass, salt=salt, email=email)
 			user.put()
-			# TODO set cookie
-			user_id = user.key().id()
-			cookie = Helper.hash_cookie(str(user_id))
-			self.response.headers.add_header('Set-Cookie', "user_id=%s; Path=/" % cookie)
+			# set cookie
+			Helper.add_cookie(self.response.headers, user)
 			self.redirect('/welcome')
 
 	def render_page(self, username="", username_error="", password_error="", verify_error="", email="", email_error=""):
@@ -98,6 +102,20 @@ class WelcomePage(Handler):
 class LoginPage(Handler):
 	def get(self):
 		self.render("problem4-login.html")
+
+	def post(self):
+		username = self.request.get("username")
+		password = self.request.get("password")
+		user = User.gql("WHERE username=:1", username).get()
+		if user:
+			tryhash = Helper.hash_password(username, password, user.salt)
+			if tryhash == user.hashpass:
+				Helper.add_cookie(self.response.headers, user)
+				self.redirect('/welcome')
+			else:
+				self.render("problem4-login.html", login_error="Wrong password")
+		else:
+			self.render("problem4-login.html", login_error="User not found")
 
 class LogoutPage(Handler):
 	def get(self):
