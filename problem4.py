@@ -48,6 +48,7 @@ class Helper:
 		cookie = Helper.hash_cookie(str(user_id))
 		headers.add_header('Set-Cookie', "user_id=%s; Path=/" % cookie)
 
+
 class SignupPage(Handler):
 	def get(self):
 		self.render_page()
@@ -119,7 +120,8 @@ class LoginPage(Handler):
 
 class LogoutPage(Handler):
 	def get(self):
-		self.write("Problem Set 4")
+		self.response.headers.add_header('Set-Cookie', "user_id=; Path=/")
+		self.redirect("/signup")
 
 app = webapp2.WSGIApplication([
     ('/', MainPage),
