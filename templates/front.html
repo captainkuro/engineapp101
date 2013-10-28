@@ -1,35 +1,10 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
-<head>
-	<title>/ascii/</title>
-</head>
-<body>
-	<h1>/ascii/</h1>
+{% block content %}
 
-	<form method="post">
-		<label>
-			<div>Title</div>
-			<input name="title" value="{{title}}">
-		</label>
+  {% for p in posts %}
+    {{ p.render() | safe }}
+    <br><br>
+  {% endfor %}
 
-		<label>
-			<div>Art</div>
-			<textarea name="art">{{art}}</textarea>
-		</label>
-
-		<div class="error">{{error}}</div>
-
-		<input type="submit">
-	</form>
-
-	<hr>
-
-	{% for art in arts %}
-		<div class="art">
-			<div class="art-title">{{art.title}}</div>
-			<pre class="art=body">{{art.art}}</pre>
-		</div>
-	{% endfor %}
-</body>
-</html>
+{% endblock %}
