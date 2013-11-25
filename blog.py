@@ -175,7 +175,7 @@ class NewPost(BlogHandler):
         if self.user:
             self.render("newpost.html")
         else:
-            self.redirect("/login")
+            self.redirect("/blog/login")
 
     def post(self):
         if not self.user:
@@ -242,10 +242,6 @@ class Signup(BlogHandler):
     def done(self, *a, **kw):
         raise NotImplementedError
 
-class Unit2Signup(Signup):
-    def done(self):
-        self.redirect('/unit2/welcome?username=' + self.username)
-
 class Register(Signup):
     def done(self):
         #make sure the user doesn't already exist
@@ -258,7 +254,7 @@ class Register(Signup):
             u.put()
 
             self.login(u)
-            self.redirect('/unit3/welcome')
+            self.redirect('/blog/welcome')
 
 class Login(BlogHandler):
     def get(self):
@@ -271,7 +267,7 @@ class Login(BlogHandler):
         u = User.login(username, password)
         if u:
             self.login(u)
-            self.redirect('/unit3/welcome')
+            self.redirect('/blog/welcome')
         else:
             msg = 'Invalid login'
             self.render('login-form.html', error = msg)
@@ -279,32 +275,22 @@ class Login(BlogHandler):
 class Logout(BlogHandler):
     def get(self):
         self.logout()
-        self.redirect('/signup')
+        self.redirect('/blog/signup')
 
 class Unit3Welcome(BlogHandler):
     def get(self):
         if self.user:
             self.render('welcome.html', username = self.user.name)
         else:
-            self.redirect('/signup')
-
-class Welcome(BlogHandler):
-    def get(self):
-        username = self.request.get('username')
-        if valid_username(username):
-            self.render('welcome.html', username = username)
-        else:
-            self.redirect('/unit2/signup')
+            self.redirect('/blog/signup')
 
 app = webapp2.WSGIApplication([('/', MainPage),
-                               ('/unit2/signup', Unit2Signup),
-                               ('/unit2/welcome', Welcome),
                                ('/blog/?(?:.json)?', BlogFront),
                                ('/blog/([0-9]+)(?:.json)?', PostPage),
                                ('/blog/newpost', NewPost),
-                               ('/signup', Register),
-                               ('/login', Login),
-                               ('/logout', Logout),
-                               ('/unit3/welcome', Unit3Welcome),
+                               ('/blog/signup', Register),
+                               ('/blog/login', Login),
+                               ('/blog/logout', Logout),
+                               ('/blog/welcome', Unit3Welcome),
                                ],
                               debug=True)
