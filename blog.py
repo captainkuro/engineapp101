@@ -7,6 +7,8 @@ import logging
 import json
 from string import letters
 
+import time
+
 import webapp2
 import jinja2
 
@@ -147,13 +149,35 @@ class Post(db.Model):
              'last_modified': self.last_modified.strftime(time_fmt)}
         return d
 
+CACHE = {}
 
+def current_time():
+    return int(time.time())
+
+def cache_get(k):
+    if k in CACHE:
+        t, v = CACHE[k]
+        return v
+
+def cache_time(k):
+    if k in CACHE:
+        t, v = CACHE[k]
+        return t
+
+def cache_set(k, v):
+    CACHE[k] = (current_time(), v)
 
 class BlogFront(BlogHandler):
     def get(self):
-        posts = greetings = Post.all().order('-created')
+        key = 'front'
+        posts = cache_get(key)
+        
+        if not posts:
+            posts = Post.all().order('-created')
+            cache_set(key, posts)
+
         if self.format == 'html':
-            self.render('front.html', posts = posts)
+            self.render('front.html', posts = posts, rendered = cache_time(key), current = current_time())
         else:
             return self.render_json([p.as_dict() for p in posts])
 
@@ -283,6 +307,7 @@ class Unit3Welcome(BlogHandler):
             self.render('welcome.html', username = self.user.name)
         else:
             self.redirect('/blog/signup')
+
 
 app = webapp2.WSGIApplication([('/', MainPage),
                                ('/blog/?(?:.json)?', BlogFront),
