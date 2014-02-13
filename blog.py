@@ -167,6 +167,10 @@ def cache_time(k):
 def cache_set(k, v):
     CACHE[k] = (current_time(), v)
 
+def cache_del(k):
+    if k in CACHE:
+        del CACHE[k]
+
 class BlogFront(BlogHandler):
     def get(self):
         key = 'front'
@@ -183,14 +187,19 @@ class BlogFront(BlogHandler):
 
 class PostPage(BlogHandler):
     def get(self, post_id):
-        key = db.Key.from_path('Post', int(post_id), parent=blog_key())
-        post = db.get(key)
+        k = post_id
+        post = cache_get(k)
+
+        if not post:
+            key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+            post = db.get(key)
+            cache_set(k, post)
 
         if not post:
             self.error(404)
             return
         if self.format == 'html':
-            self.render("permalink.html", post = post)
+            self.render("permalink.html", post = post, rendered = cache_time(k), current = current_time())
         else:
             self.render_json(post.as_dict())
 
@@ -211,6 +220,8 @@ class NewPost(BlogHandler):
         if subject and content:
             p = Post(parent = blog_key(), subject = subject, content = content)
             p.put()
+            # clear cache
+            cache_del('front')
             self.redirect('/blog/%s' % str(p.key().id()))
         else:
             error = "subject and content, please!"
@@ -308,6 +319,12 @@ class Unit3Welcome(BlogHandler):
         else:
             self.redirect('/blog/signup')
 
+class FlushPage(BlogHandler):
+    def get(self):
+        global CACHE
+        CACHE = {}
+        self.redirect('/blog')
+
 
 app = webapp2.WSGIApplication([('/', MainPage),
                                ('/blog/?(?:.json)?', BlogFront),
@@ -317,5 +334,6 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                ('/blog/login', Login),
                                ('/blog/logout', Logout),
                                ('/blog/welcome', Unit3Welcome),
+                               ('/blog/flush', FlushPage),
                                ],
                               debug=True)
